@@ -1,0 +1,7 @@
+# Ignore .o
+*.o
+# Ignore build folder
+build
+# Ignore specific files
+ztbc.txt
+zt

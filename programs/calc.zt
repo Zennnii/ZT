@@ -1,0 +1,56 @@
+// Calculator program written in ZT
+
+echo "ZT Calculator\n"
+
+// Variables
+let int num1
+let int num2
+let char op
+let int res
+
+// First number
+echo "Enter the first number: "
+input int num1
+
+// Operator
+echo "\nEnter an operator (+, -, *, /): "
+input char op
+
+// Second number
+echo "\nEnter the second number: "
+input int num2
+
+// Calculating the result
+
+// Addition
+if (op == '+') {
+    res = num1 + num2
+    echo res
+}
+
+// Subtraction
+else if (op == '-') {
+    res = num1 - num2
+    echo res
+}
+
+// Multiplication
+else if (op == '*') {
+    res = num1 * num2
+    echo res
+}
+
+// Division
+else if (op == '/') {
+    if (num2 == 0) {
+        echo "Error: Division by zero"
+        exit
+    }
+    res = num1 / num2
+    echo res
+}
+
+// Invalid operator
+else {
+    echo "Error: Invalid operator"
+}
