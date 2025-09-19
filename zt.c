@@ -49,7 +49,77 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    fprintf(out, "#include <stdio.h>\n#include <stdlib.h>\nint main() {\n");
+    FILE *tmp = fopen("templates/gtk_boilerplate", "r");
+    if (!tmp) {
+        perror("Failed to open template file");
+        return 1;
+    }
+
+    int is_gui = 1;  // default
+
+    // Read the first line
+    if (fgets(line_buf, sizeof(line_buf), in)) {
+        trim_newline(line_buf);
+        trim_whitespace(line_buf);
+
+        if (strncmp(line_buf, ":NON_GUI:", 9) == 0) {
+            is_gui = 0;
+        }
+    }
+
+    if (!is_gui) {
+        // Emit standard non-GUI boilerplate
+        fprintf(out,
+            "#include <stdio.h>\n"
+            "#include <stdlib.h>\n\n"
+            "int main() {\n"
+        );
+
+        // Now continue parsing remaining lines as non-GUI statements
+    } else {
+        // GUI program logic
+        char window_title[128] = {0};
+        int win_width = 400, win_height = 300;  // defaults
+
+        // If first line is GUI window declaration
+        if (strncmp(line_buf, "window ", 7) == 0) {
+            snprintf(window_title, sizeof(window_title), "%.*s", (int)(sizeof(window_title)-1), line_buf + 7);
+        }
+
+        // Read second line -> size
+        if (fgets(line_buf, sizeof(line_buf), in)) {
+            trim_newline(line_buf);
+            trim_whitespace(line_buf);
+            if (strncmp(line_buf, "windowSize", 10) == 0) {
+                int w, h;
+                if (sscanf(line_buf, "windowSize (%d, %d)", &w, &h) == 2) {
+                    win_width = w;
+                    win_height = h;
+                }
+            }
+        }
+
+        // Emit GTK boilerplate
+        fseek(tmp, 0, SEEK_END);
+        long size = ftell(tmp);  // signed
+        fseek(tmp, 0, SEEK_SET);
+
+        char *buffer = malloc(size + 1);
+        if (!buffer) { perror("malloc failed"); return 1; }
+
+        size_t read_bytes = fread(buffer, 1, (size_t)size, tmp);  // cast size to size_t
+        if (read_bytes != (size_t)size) {
+            fprintf(stderr, "Failed to read the entire template file\n");
+            fclose(tmp);
+            free(buffer);
+            return 1;
+        }
+        buffer[size] = '\0';
+        fclose(tmp);
+
+        fprintf(out, buffer, window_title, win_width, win_height);
+        free(buffer);
+    }
 
 
     while (fgets(line_buf, sizeof(line_buf), in)) {
@@ -71,22 +141,37 @@ int main(int argc, char *argv[]) {
     }
 
 
-
-    fprintf(out, "return 0;\n}\n");
+    if (is_gui == 0) {
+        fprintf(out, "return 0;\n}\n");
+    }
+    else {
+        // do nothing
+    }
     fclose(in);
     fclose(out);
 
     char cmd[512];
-    snprintf(cmd, sizeof(cmd), "gcc \"%s\" -o \"%s\"", c_file, output_file);
+    if (is_gui == 1) {
+        snprintf(cmd, sizeof(cmd), "gcc \"%s\" -o \"%s\" $(pkg-config --cflags --libs gtk+-3.0)", c_file, output_file);
+    }
+    else {
+        snprintf(cmd, sizeof(cmd), "gcc \"%s\" -o \"%s\"", c_file, output_file);
+    }
     int ret = system(cmd);
     if (ret == 0) {
         printf("Compiled %s -> %s\n", input_file, output_file);
         if (!keep_c) {
             remove(c_file);
         }
-        else if (run == 1) {
-            
-        }
+        if (run) {
+			printf("\n");
+			char rcmd[512];
+			snprintf(rcmd, sizeof(rcmd), "./%s", output_file);
+			int ret2 = system(rcmd);
+			if (ret2 != 0) {
+				fprintf(stderr, "Failed to run %s\n", output_file);
+			}
+		}
     } else {
         fprintf(stderr, "GCC compilation failed!\n");
         return 1;

@@ -1,0 +1,9 @@
+:NON_GUI:
+// For statements in ZT
+
+let int i
+
+for (i = 0; i < 5; i++) {
+	echo i
+	echo "\n"
+}

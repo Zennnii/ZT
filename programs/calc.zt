@@ -1,3 +1,4 @@
+:NON_GUI:
 // Calculator program written in ZT
 
 echo "ZT Calculator\n"
@@ -9,7 +10,7 @@ let char op
 let int res
 
 // First number
-echo "Enter the first number: "
+echo "\nEnter the first number: "
 input int num1
 
 // Operator
@@ -26,18 +27,21 @@ input int num2
 if (op == '+') {
     res = num1 + num2
     echo res
+	echo "\n"
 }
 
 // Subtraction
 else if (op == '-') {
     res = num1 - num2
     echo res
+	echo "\n"
 }
 
 // Multiplication
 else if (op == '*') {
     res = num1 * num2
     echo res
+	echo "\n"
 }
 
 // Division
@@ -48,9 +52,10 @@ else if (op == '/') {
     }
     res = num1 / num2
     echo res
+	echo "\n"
 }
 
 // Invalid operator
 else {
-    echo "Error: Invalid operator"
+    echo "Error: Invalid operator\n"
 }

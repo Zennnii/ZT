@@ -39,6 +39,10 @@ StatementType parse_line(char *line) {
     else if (strncmp(line, "while ", 6) == 0) {
         return STMT_WHILE;
     }
+	// For statement
+	else if (strncmp(line, "for", 3) == 0 && isspace(line[3])) {
+		return STMT_FOR;
+	}
     // Closing brace 
     else if (strchr(line, '}') != NULL) {
         return STMT_CLOSING_BRACE;

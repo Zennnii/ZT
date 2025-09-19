@@ -1,8 +1,14 @@
 #include "codegen.h"
+#include "../utils/utils.h"
+#include <string.h>
+#include <ctype.h>
 
 extern FILE *out; // Reference to global output file
 
+
 void generate_code(StatementType stmt_type, char *line) {
+    trim_whitespace(line); // Remove CR/LF and spaces
+
     switch (stmt_type) {
         case STMT_LET: {
             char type[32], name[64], expr[128];
@@ -20,7 +26,7 @@ void generate_code(StatementType stmt_type, char *line) {
         }
 
         case STMT_ASSIGNMENT: {
-            fprintf(out, "%s;\n", line);
+            fprintf(out, "%s;\n", line); // Add semicolon
             break;
         }
 
@@ -43,72 +49,53 @@ void generate_code(StatementType stmt_type, char *line) {
                 fprintf(stderr, "Syntax error in input: %s\n", line);
                 break;
             }
-            
+
+            fprintf(out, "fflush(stdout);\n"); // ensure prompt is visible
+
             if (strncmp(type, "int", 3) == 0) {
-                fprintf(out, "scanf(\"%%d\", &%s);\n", name);
-            }
-            else if (strncmp(type, "float", 5) == 0) {
-                fprintf(out, "scanf(\"%%f\", &%s);\n", name);
-            }
-            else if (strncmp(type, "double", 6) == 0) {
-                fprintf(out, "scanf(\"%%lf\", &%s);\n", name);
-            }
-            else if (strncmp(type, "char", 4) == 0) {
-                fprintf(out, "scanf(\"%%c\", &%s);\n", name);
-            }
-            else {
-                fprintf(out, "scanf(\"%%d\", &%s);\n", name);
+                fprintf(out, "scanf(\" %%d\", &%s);\n", name);
+            } else if (strncmp(type, "float", 5) == 0) {
+                fprintf(out, "scanf(\" %%f\", &%s);\n", name);
+            } else if (strncmp(type, "double", 6) == 0) {
+                fprintf(out, "scanf(\" %%lf\", &%s);\n", name);
+            } else if (strncmp(type, "char", 4) == 0) {
+                fprintf(out, "scanf(\" %%c\", &%s);\n", name); // leading space to skip newline
+            } else {
+                fprintf(out, "scanf(\" %%d\", &%s);\n", name); // default to int
             }
             break;
         }
 
-        case STMT_IF: {
+        case STMT_IF:
+        case STMT_ELSE_IF:
+        case STMT_WHILE:
+        case STMT_FOR: {
             char cond[128];
             char *brace = strchr(line, '{');
-            if (brace) {
-                size_t len = brace - (line + 3);
-                strncpy(cond, line + 3, len);
-                cond[len] = '\0';
-            } else {
-                strcpy(cond, line + 3);
-            }
-            strip_outer_parentheses(cond);
-            fprintf(out, "if (%s) {\n", cond);
-            break;
-        }
+            int offset = 0;
+            if (stmt_type == STMT_IF) offset = 3;
+            else if (stmt_type == STMT_ELSE_IF) offset = 8;
+            else if (stmt_type == STMT_WHILE) offset = 6;
+            else if (stmt_type == STMT_FOR) offset = 6;
 
-        case STMT_ELSE_IF: {
-            char cond[128];
-            char *brace = strchr(line, '{');
             if (brace) {
-                size_t len = brace - (line + 8);
-                strncpy(cond, line + 8, len);
+                size_t len = brace - (line + offset);
+                strncpy(cond, line + offset, len);
                 cond[len] = '\0';
             } else {
-                strcpy(cond, line + 8);
+                strcpy(cond, line + offset);
             }
             strip_outer_parentheses(cond);
-            fprintf(out, "else if (%s) {\n", cond);
+
+            if (stmt_type == STMT_IF) fprintf(out, "if (%s) {\n", cond);
+            else if (stmt_type == STMT_ELSE_IF) fprintf(out, "else if (%s) {\n", cond);
+            else if (stmt_type == STMT_WHILE) fprintf(out, "while (%s) {\n", cond);
+            else if (stmt_type == STMT_FOR) fprintf(out, "for (%s) {\n", cond);
             break;
         }
 
         case STMT_ELSE: {
             fprintf(out, "else {\n");
-            break;
-        }
-
-        case STMT_WHILE: {
-            char cond[128];
-            char *brace = strchr(line, '{');
-            if (brace) {
-                size_t len = brace - (line + 6);
-                strncpy(cond, line + 6, len);
-                cond[len] = '\0';
-            } else {
-                strcpy(cond, line + 6);
-            }
-            strip_outer_parentheses(cond);
-            fprintf(out, "while (%s) {\n", cond);
             break;
         }
 
@@ -126,15 +113,12 @@ void generate_code(StatementType stmt_type, char *line) {
             fprintf(stderr, "Unknown statement: %s\n", line);
             break;
         }
-        
-        case STMT_EMPTY: {
-            // Do nothing for empty lines
-            break;
-        }
-        
-        default: {
+
+        case STMT_EMPTY:
+            break; // Do nothing
+
+        default:
             fprintf(stderr, "Invalid syntax: %s\n", line);
             break;
-        }
     }
 }

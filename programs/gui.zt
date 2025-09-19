@@ -1,0 +1,2 @@
+window "GUI"
+windowSize (500, 500)

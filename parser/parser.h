@@ -15,6 +15,7 @@ typedef enum {
     STMT_ELSE_IF,
     STMT_ELSE,
     STMT_WHILE,
+	STMT_FOR,
     STMT_CLOSING_BRACE,
     STMT_EXIT,
     STMT_UNKNOWN,
